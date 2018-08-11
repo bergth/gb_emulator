@@ -1,4 +1,4 @@
 #include "cpu.hh"
 
-Cpu::Cpu(): PC{0x0100}, SP{0xFFFE}
+Cpu::Cpu(): SP{0xFFFE}, PC{0x0100}
 {}
