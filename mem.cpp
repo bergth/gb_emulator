@@ -92,7 +92,6 @@ void Mem::print_hex(uint16_t addr, size_t n) const
 }
 
 
-// switch de l'infini
 string Mem::get_opcode(uint16_t &addr) const
 {
     string str = "";
@@ -121,7 +120,34 @@ void Mem::print_dis(uint16_t addr, size_t n) const
     for(size_t i = 0; i < n; i++)
     {
         uint8_t opc = get_8bit(addr);
-        cout << "[" << useGB::str_uint16(addr) << "] " << useGB::str_uint8(opc) << " : " << get_opcode(addr) << endl;
+        uint16_t last_addr = addr;
+        string res = get_opcode(addr);
+        int diff = addr - last_addr;
+        if(diff == 0)
+        {
+            cerr << "Error: index addr not incremented" << endl;
+            exit(EXIT_FAILURE);
+        }
+        string hex = "";
+        if(diff == 1)
+        {
+            hex = useGB::str_uint8(opc) + "      ";
+        }
+        else if(diff == 2)
+        {
+            hex = useGB::str_uint8(opc) + " " + useGB::str_uint8(get_8bit(last_addr + 1)) + "   ";
+        }
+        else if(diff == 3)
+        {
+            hex = useGB::str_uint8(opc) + " " + useGB::str_uint8(get_8bit(last_addr + 1)) + " " + useGB::str_uint8(get_8bit(last_addr + 2));
+        }
+        else
+        {
+            cerr << diff << endl;
+            cerr << "Error: index addr incremented more than 3 times: " <<  useGB::str_uint16(last_addr) << ":" <<  res << endl;
+            exit(0);
+        }
+        cout << "[" << useGB::str_uint16(last_addr) << "] " << hex << " : " << res << endl;
     }
 }
 
@@ -472,7 +498,7 @@ std::string Mem::get_opc_b11x000(uint8_t opc, uint16_t &addr) const
         {
             case 0:
                 addr += 2;
-                return "LDH (" + useGB::str_uint8(param) + ", A";
+                return "LDH (" + useGB::str_uint8(param) + "), A";
             case 1:
                 addr += 2;
                 return "LDH A, (" + useGB::str_uint8(param) + ")";
