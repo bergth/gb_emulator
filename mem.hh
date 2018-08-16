@@ -9,8 +9,11 @@ class Mem {
         void alloc(uint16_t addr);
 
         std::string get_cc(uint8_t val) const;
-        std::string get_r16(uint8_t val, int n) const;
-        std::string get_r8(uint8_t val) const;
+        std::string get_v81(uint8_t val) const;
+        std::string get_v82(uint8_t val) const;
+        std::string get_v161(uint8_t val) const;
+        std::string get_v162(uint8_t val) const;
+        std::string get_ALU(uint8_t val) const;
 
 
         std::string get_opcode(uint16_t &addr) const;

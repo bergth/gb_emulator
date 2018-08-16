@@ -15,5 +15,6 @@ class Gameboy {
         Gameboy(const char* filename);
         ~Gameboy();
         void load_32k_rom();
+        void create_test();
         void run();
 };

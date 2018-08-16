@@ -71,17 +71,17 @@ void Mem::set_8bit(uint8_t val, uint16_t addr)
 
 void Mem::print_hex(uint16_t addr, size_t n) const
 {
-    cout << "    | 0- 1- 2- 3- 4- 5- 6- 7- 8- 9- A- B- C- D- E- F-     0123456789ABCDEF" << endl;
+    cout << "       0- 1- 2- 3- 4- 5- 6- 7- 8- 9- A- B- C- D- E- F-   │  0123456789ABCDEF" << endl;
     for(size_t i = 0; i < n; i++)
     {
-        cout << useGB::str_uint16(addr + i * 0x10);
+        cout << " " << useGB::str_uint16(addr + i * 0x10);
         cout << ": ";
         for(size_t j = 0x0; j <= 0xF; j++)
         {
             uint8_t val = get_8bit(addr + i * 0x10 + j);
             cout << useGB::str_uint8(val) << " ";
         }
-        cout << "    ";
+        cout << "  │  ";
         for(size_t j = 0x0; j <= 0xF; j++)
         {
             uint8_t val = get_8bit(addr + i * 0x10 + j);
@@ -147,7 +147,7 @@ void Mem::print_dis(uint16_t addr, size_t n) const
             cerr << "Error: index addr incremented more than 3 times: " <<  useGB::str_uint16(last_addr) << ":" <<  res << endl;
             exit(0);
         }
-        cout << "[" << useGB::str_uint16(last_addr) << "] " << hex << " : " << res << endl;
+        cout << " " << useGB::str_uint16(last_addr) << " │ " << hex << " │ " << res << endl;
     }
 }
 
@@ -170,61 +170,101 @@ std::string Mem::get_cc(uint8_t val) const
     }
 }
 
-std::string Mem::get_r16(uint8_t val, int n) const
+std::string Mem::get_v81(uint8_t val) const
 {
-    val &=0b00000011;
-    switch(val)
+    val &= 0b00000111;
+    if(val == 0b000)
     {
-        case 0b00:
-            return "BC";
-        case 0b01:
-            return "DE";
-        case 0b10:
-            if(n == 1)
-                return "HL";
-            else
-                return "HL+";
-            break;
-        case 0b11:
-            if(n==1)
-                return "SP";
-            else if(n == 2)
-                return "HL-";
-            else
-                return "AF";
-            break;
-        default:
-            cerr << "verif param get_r16" << endl;
-            exit(0);
+        return "B";
+    }
+    else if(val == 0b001)
+    {
+        return "C";
+    }
+    else if(val == 0b010)
+    {
+        return "D";
+    }
+    else if(val == 0b011)
+    {
+        return "E";
+    }
+    else if(val == 0b100)
+    {
+        return "H";
+    }
+    else if(val == 0b101)
+    {
+        return "L";
+    }
+    else if(val == 0b110)
+    {
+        return "(HL)";
+    }
+    else
+    {
+        return "A";
     }
 }
 
-std::string Mem::get_r8(uint8_t val) const
+std::string Mem::get_v82(uint8_t val) const
+{
+    val &= 0b00000011;
+    if(val == 0b00)
+        return "(BC)";
+    else if(val == 0b01)
+        return "(DE)";
+    else if(val == 0b10)
+        return "(HL+)";
+    else
+        return "(HL-)";
+}
+
+std::string Mem::get_v161(uint8_t val) const
+{
+    val &= 0b00000011;
+    if(val == 0b00)
+        return "BC";
+    else if(val == 0b01)
+        return "DE";
+    else if(val == 0b10)
+        return "HL";
+    else
+        return "SP";
+}
+
+std::string Mem::get_v162(uint8_t val) const
+{
+    val &= 0b00000011;
+    if(val == 0b00)
+        return "BC";
+    else if(val == 0b01)
+        return "DE";
+    else if(val == 0b10)
+        return "HL";
+    else
+        return "AF";
+}
+
+std::string Mem::get_ALU(uint8_t val) const
 {
     val &= 0b00000111;
-    switch(val)
-    {
-        case 0b000:
-            return "B";
-        case 0b001:
-            return "C";
-        case 0b010:
-            return "D";
-        case 0b011:
-            return "E";
-        case 0b100:
-            return "H";
-        case 0b101:
-            return "L";
-        case 0b110:
-            return "(HL)";
-        case 0b111:
-            return "A";
-        default:
-            cerr << "[" << useGB::str_uint8(val) << "]" << endl;
-            cerr << "Verif param get_r8" << endl;
-            exit(1);
-    }
+    if(val == 0b000)
+        return "ADD A,";
+    else if(val == 0b001)
+        return "ADC A,";
+    else if(val == 0b010)
+        return "SUB A,";
+    else if(val == 0b011)
+        return "SBC A,";
+    else if(val == 0b100)
+        return "AND A,";
+    else if(val == 0b101)
+        return "XOR A,";
+    else if(val == 0b110)
+        return "OR A,";
+    else
+        return "CP A,";
 }
 
 std::string Mem::get_n(uint8_t val) const
@@ -306,66 +346,66 @@ std::string Mem::get_opc_b00x000(uint8_t opc, uint16_t &addr) const
 
 std::string Mem::get_opc_b00x001(uint8_t opc, uint16_t &addr) const
 {
-    uint8_t mask = (opc & 0b11110111) >> 3;
+    uint8_t mask = (opc & 0b00001000) >> 3;
     if(!mask)
     {
-        string tmp = "LD," + get_r16(opc >> 4,1) + "," + useGB::str_uint16(get_16bit(addr + 1));
+        string tmp = "LD " + get_v162(opc >> 4) + "," + useGB::str_uint16(get_16bit(addr + 1));
         addr += 3;
         return tmp;
     }
     else
     {
         addr++;
-        return "ADD HL," + get_r16(opc >> 4,1);
+        return "ADD HL," + get_v162(opc >> 4);
     }
 }
 
 std::string Mem::get_opc_b00x010(uint8_t opc, uint16_t &addr) const
 {
-    uint8_t mask = (opc & 0b11110111) >> 3;
+    uint8_t mask = (opc & 0b00001000) >> 3;
+    addr++;
+
     if(!mask)
     {
-        addr++;
-        return "LD " + get_r16(opc >> 4,1) + ",A";
+        return "LD " + get_v82(opc >> 4) + ",A";
     }
     else
     {
-        addr++;
-        return "LD A," + get_r16(opc >> 4,1);
+        return "LD A," + get_v82(opc >> 4);
     }
 }
 
 std::string Mem::get_opc_b00x011(uint8_t opc, uint16_t &addr) const
 {
-    uint8_t mask = (opc & 0b11110111) >> 3;
+    uint8_t mask = (opc & 0b00001000) >> 3;
     if(!mask)
     {
         addr++;
-        return "INC " + get_r16(opc >> 4,1);
+        return "INC " + get_v162(opc >> 4);
     }
     else
     {
         addr++;
-        return "DEC " + get_r16(opc >> 4,1);
+        return "DEC " + get_v162(opc >> 4);
     }
 }
 
 std::string Mem::get_opc_b00x100(uint8_t opc, uint16_t &addr) const
 {
     addr++;
-    return "INC " + get_r8(opc >> 3);
+    return "INC " + get_v81(opc >> 3);
 }
 
 std::string Mem::get_opc_b00x101(uint8_t opc, uint16_t &addr) const
 {
     addr++;
-    return "DEC " + get_r8(opc >> 3);
+    return "DEC " + get_v81(opc >> 3);
 }
 
 std::string Mem::get_opc_b00x110(uint8_t opc, uint16_t &addr) const
 {
     string tmp = "";
-    tmp = "LD " + get_r8(opc >> 3) + "," + useGB::str_uint8(get_8bit(addr+1));
+    tmp = "LD " + get_v81(opc >> 3) + "," + useGB::str_uint8(get_8bit(addr+1));
     addr += 2;
     return tmp;
 }
@@ -412,7 +452,7 @@ std::string Mem::get_opc_b01(uint8_t opc, uint16_t &addr) const
     }
     else
     {
-        string tmp = "LD " + get_r8(opc >> 3) + "," + get_r8(opc);
+        string tmp = "LD " + get_v81(opc >> 3) + "," + get_v81(opc);
         addr++;
         return tmp;
     }
@@ -421,36 +461,7 @@ std::string Mem::get_opc_b01(uint8_t opc, uint16_t &addr) const
 std::string Mem::get_opc_b10(uint8_t opc, uint16_t &addr) const
 {
     uint8_t mask = (opc & 0b00111000) >> 3;
-    string tmp = "";
-    switch(mask)
-    {
-        case 0b000:
-            tmp = "ADD A," + get_r8(opc);
-            break;
-        case 0b001:
-            tmp = "ADC A," + get_r8(opc);
-            break;
-        case 0b010:
-            tmp = "SUB A," + get_r8(opc);
-            break;
-        case 0b011:
-            tmp = "SBC A," + get_r8(opc);
-            break;
-        case 0b100:
-            tmp = "AND A," + get_r8(opc);
-            break;
-        case 0b101:
-            tmp = "XOR A," + get_r8(opc);
-            break;
-        case 0b110:
-            tmp = "0R A," + get_r8(opc);
-            break;
-        case 0b111:
-            tmp = "CP A," + get_r8(opc);
-            break;
-        default:
-            tmp = "?? (0x10)";
-    }
+    string tmp = get_ALU(mask) + get_v81(opc);
     addr++;
     return tmp;
 }
@@ -496,16 +507,16 @@ std::string Mem::get_opc_b11x000(uint8_t opc, uint16_t &addr) const
         uint8_t param = get_8bit(addr + 1);
         switch(val2)
         {
-            case 0:
+            case 0b00:
                 addr += 2;
                 return "LDH (" + useGB::str_uint8(param) + "), A";
-            case 1:
+            case 0b10:
                 addr += 2;
                 return "LDH A, (" + useGB::str_uint8(param) + ")";
-            case 2:
+            case 0b01:
                 addr += 2;
                 return "ADD SP, " + useGB::str_uint8(param);
-            case 3:
+            case 0b11:
                 addr += 2;
                 return "LD HL, SP + " + useGB::str_uint8(param);
             default:
@@ -521,7 +532,7 @@ std::string Mem::get_opc_b11x001(uint8_t opc, uint16_t &addr) const
     addr++;
     if((val & 0b001) == 0)
     {
-        return "POP " + get_r16((val & 0b110) >> 1, 3);
+        return "POP " + get_v161((val & 0b110) >> 1);
     }
     else
     {
@@ -553,9 +564,9 @@ std::string Mem::get_opc_b11x010(uint8_t opc, uint16_t &addr) const
     uint8_t val = (opc & 0b00111000) >> 3;
     if(val >> 2 == 0)
     {
-        uint16_t val = get_16bit(addr+1);
+        uint16_t val16 = get_16bit(addr+1);
         addr += 3;
-        return "JPP " + get_cc(val & 0b011) + "," + useGB::str_uint16(val);
+        return "JP " + get_cc(val & 0b011) + "," + useGB::str_uint16(val16);
     }
     else
     {
@@ -605,9 +616,9 @@ std::string Mem::get_opc_b11x011(uint8_t opc, uint16_t &addr) const
     }
     else if(val == 0b001)
     {
-        string pcb = get_CB(addr + 1);
-        addr++;
-        return "[CB]: " + pcb;
+        string pcb = get_CB(get_8bit(addr + 1));
+        addr += 2;
+        return pcb;
     }
     else if(val == 0b111)
     {
@@ -643,7 +654,7 @@ std::string Mem::get_opc_b11x101(uint8_t opc, uint16_t &addr) const
     if((val & 0b001) == 0)
     {
         addr += 1;
-        return "PUSH " + get_r16(opc >> 1,2);
+        return "PUSH " + get_v162(val >> 1);
     }
     else
     {
@@ -787,26 +798,26 @@ std::string Mem::get_CB(uint8_t opc) const
                 flag = "??";
                 break;
         }
-        flag += " " + get_r8(val & 0b00000111);
+        flag += " " + get_v81(val & 0b00000111);
         return flag;
     }
     else if(val == 0b01)
     {
         uint8_t n = (val & 0b00111000) >> 3;
         uint8_t r8 = val & 0b00000111;
-        return "BIT " + get_n(n) + "," + get_r8(r8);
+        return "BIT " + get_n(n) + "," + get_v81(r8);
     }
     else if(val == 0b10)
     {
         uint8_t n = (val & 0b00111000) >> 3;
         uint8_t r8 = val & 0b00000111;
-        return "RES " + get_n(n) + "," + get_r8(r8);
+        return "RES " + get_n(n) + "," + get_v81(r8);
     }
     else if(val == 0b11)
     {
         uint8_t n = (val & 0b00111000) >> 3;
         uint8_t r8 = val & 0b00000111;
-        return "SET " + get_n(n) + "," + get_r8(r8);
+        return "SET " + get_n(n) + "," + get_v81(r8);
     }
     return "??";
 }
