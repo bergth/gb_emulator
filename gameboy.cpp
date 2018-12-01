@@ -4,8 +4,8 @@ using namespace std;
 
 Gameboy::Gameboy(const char* filename): ifs(filename, ios::in | ios::binary), Gcarth(ifs)
 {
-    //load_32k_rom();
-    create_test();
+    load_32k_rom();
+    //create_test();
 }
 
 Gameboy::~Gameboy() {}
